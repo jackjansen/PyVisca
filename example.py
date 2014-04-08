@@ -30,7 +30,10 @@ def main():
 	from pyviscalib.visca import Visca
 	from  time import sleep
 
-	v=Visca()
+    if len(sys.argv) > 1:
+    	v = Visca(sys.argv[1])
+    else:
+        v = Visca()
 
 	v.cmd_adress_set()
 
