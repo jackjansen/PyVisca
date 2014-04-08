@@ -23,6 +23,9 @@
 import serial,sys
 from thread import allocate_lock
 
+class ViscaError(RuntimeError):
+	pass
+
 class Visca():
 
 	def __init__(self,portname="/dev/ttyUSB0"):
@@ -164,7 +167,7 @@ class Visca():
 	def _write_packet(self,packet):
 
 		if not self.serialport.isOpen():
-			sys.exit(1)
+			raise ViscaError('Serial port is not open')
 
 		# lets see if a completion message or someting
 		# else waits in the buffer. If yes dump it.
@@ -267,29 +270,27 @@ class Visca():
 		reply = self.send_broadcast('\x30'+chr(first)) # set address
 
 		if not reply:
-			print "No reply from the bus."
-			sys.exit(1)
+			raise ViscaError("No reply from the bus.")
 
 		if len(reply)!=4 or reply[-1:]!='\xff':
-			print "ERROR enumerating devices"
-			sys.exit(1)
+			raise ViscaError("ERROR enumerating devices")
 		if reply[0] != '\x88':
-			print "ERROR: expecting broadcast answer to an enumeration request"
-			sys.exit(1)
+			raise ViscaError("Expected broadcast answer to an enumeration request")
 		address = ord(reply[2])
 
 		d=address-first
 		print "debug: found %i devices on the bus" % d
 
 		if d==0:
-			sys.exit(1)
+			raise ViscaError("No devices on the bus")
 
 
 	def cmd_if_clear_all(self):
 		reply=self.send_broadcast( '\x01\x00\x01') # interface clear all
+		if not reply:
+			raise ViscaError("No reply to broadcast message")
 		if not reply[1:]=='\x01\x00\x01\xff':
-			print "ERROR clearing all interfaces on the bus!"
-			sys.exit(1)
+			raise ViscaError("ERROR clearing all interfaces on the bus!")
 
 		print "debug: all interfaces clear"
 
