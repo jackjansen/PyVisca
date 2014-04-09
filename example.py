@@ -57,6 +57,21 @@ def main():
 		
 	CAM=1
 
+	print 'Camera status:'
+	rv = v.inq_cam_power(CAM)
+	print '\tPower:', v.decode_power(rv)
+	rv = v.inq_cam_version(CAM)
+	print '\tVersion:', repr(rv)
+	rv = v.inq_cam_id(CAM)
+	print '\tID:', repr(rv)
+	rv = v.inq_cam_videosystem(CAM)
+	print '\tVideosystem:', v.decode_videosystem(rv)
+	rv = v.inq_cam_zoom_pos(CAM)
+	print '\tZoom:', rv
+	rv = v.inq_cam_pan_tilt_pos(CAM)
+	print '\tPan/Tilt:', rv
+
+
 	print 'example: cmd_cam_power_on'
 	v.cmd_cam_power_on(CAM)
 
@@ -68,7 +83,7 @@ def main():
 	print 'example: cmd_datascreen_on'
 	v.cmd_datascreen_on(CAM)
 
-
+	
 	sleep(3)
 	print 'example: cmd_ptd_abs -1440,-360'
 	v.cmd_ptd_abs(CAM,pp=-1440,tp=-360)

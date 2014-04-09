@@ -173,8 +173,8 @@ class Visca():
 			if errcode==0x05:
 				message = "Invalid socket %d" % socketno
 			if errcode==0x41:
-				message = "Command not executable on socket %d" % socketno
-			raise ViscaError("Received visca error: %s" % message)
+				message = "Command not currently executable on socket %d" % socketno
+			raise ViscaError("Received unknown visca error: %s" % message)
 
 		return packet
 
@@ -209,6 +209,8 @@ class Visca():
 		# lets see if a completion message or someting
 		# else waits in the buffer. If yes dump it.
 		if self.serialport.inWaiting():
+			if 1 or self.DEBUG:
+				print 'visca._write_packet: reading old packet...'
 			self.recv_packet("ignored")
 
 		self.serialport.write(packet)
@@ -264,7 +266,6 @@ class Visca():
 
 		return reply
 
-
 	def send_broadcast(self,data):
 		# shortcut
 		return self.send_packet(-1,data)
@@ -286,8 +287,29 @@ class Visca():
 		s=ls&0b1111
 		return chr(p)+chr(q)+chr(r)+chr(s)
 
+	def v2i(self, value):
+		"""Return dword in visca format is integer"""
+		if len(value) != 4:
+			raise ViscaError("Invalid visca integer encoding")
+		p = ord(value[0])
+		q = ord(value[1])
+		r = ord(value[2])
+		s = ord(value[3])
+		if (p&0xf0) or (q&0xf0) or (r&0xf0) or (s&0xf0):
+			raise ViscaError("Invalid visca integer encoding")
+		return (
+			((p & 0x0f) << 12) |
+			((q & 0x0f) <<  8) |
+			((r & 0x0f) <<  4) |
+			((s & 0x0f)      ))
 
-
+	def v2i_signed(self, value):
+		value = self.v2i(value)
+		if value & 0x8000:
+			value ^= 0xffff
+			value -= 1
+		return value
+		
 	def cmd_adress_set(self):
 		"""
 		starts enumerating devices, sends the first adress to use on the bus
@@ -339,10 +361,77 @@ class Visca():
 
 		return reply
 
+	def inq_if(self,device,subcmd):
+		packet='\x09\x00'+subcmd
+		reply = self.send_packet(device,packet)
+		#FIXME: check returned data here and retransmit?
 
+		return reply
 
+	def inq_cam(self,device,subcmd):
+		packet='\x09\x04'+subcmd
+		reply = self.send_packet(device,packet)
+		#FIXME: check returned data here and retransmit?
 
+		return reply
 
+	def inq_pt(self,device,subcmd):
+		packet='\x09\x06'+subcmd
+		reply = self.send_packet(device,packet)
+		#FIXME: check returned data here and retransmit?
+
+		return reply
+
+	# Inquiry commands
+	def inq_cam_power(self, device):
+		reply = self.inq_cam(device, '\x00')
+		return ord(reply[2])
+		
+	def inq_cam_zoom_pos(self, device):
+		reply = self.inq_cam(device, '\x47')
+		return self.v2i(reply[2:-1])
+
+	def inq_cam_version(self, device):
+		reply = self.inq_if(device, '\x02')
+		return reply[2:-1]
+		
+	def inq_cam_id(self, device):
+		reply = self.inq_cam(device, '\x22')
+		return self.v2i(reply[2:-1])
+		
+	def inq_cam_videosystem(self, device):
+		reply = self.inq_pt(device, '\x23')
+		return ord(reply[2])
+		
+	def inq_cam_pan_tilt_pos(self, device):
+		reply = self.inq_pt(device, '\x12')
+		pan = self.v2i_signed(reply[2:6])
+		tilt = self.v2i_signed(reply[6:-1])
+		return pan, tilt
+		
+	def decode_power(self, rv):
+		if rv == 2: return 'on'
+		if rv == 3: return 'off'
+		if rv == 4: return 'error'
+		return 'unknown (0x%x)' % rv
+		
+	VIDEOSYSTEM = {
+		0 : '1920x1080p60',
+		1 : '1920x1080p30',
+		2 : '1920x1080i60',
+		3 : '1280x720p60',
+		4 : '1280x720p30',
+		5 : '640x480p60',
+		8 : '1920x1080p50',
+		9 : '1920x1080p25',
+		10 : '1920x1080i50',
+		11 : '1280x720p50',
+		12 : '1280x720p25',
+		}
+		
+	def decode_videosystem(self, rv):
+		return self.VIDEOSYSTEM.get(rv, 'Unknown (0x%x)' % rv)
+		
 	# POWER control
 
 	def cmd_cam_power(self,device,onoff):
