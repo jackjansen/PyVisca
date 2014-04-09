@@ -27,6 +27,7 @@ class ViscaError(RuntimeError):
 	pass
 
 class Visca():
+	DEBUG=False
 
 	def __init__(self,portname="/dev/ttyUSB0"):
 		self.serialport=None
@@ -36,21 +37,19 @@ class Visca():
 
 	def open_port(self):
 
-		self.mutex.acquire()
+		with self.mutex:
 
-		if (self.serialport == None):
-			try:
-				self.serialport = serial.Serial(self.portname,9600,timeout=2,stopbits=1,bytesize=8,rtscts=False, dsrdtr=False)
-				self.serialport.flushInput()
-			except Exception as e:
-				print ("Exception opening serial port '%s' for display: %s\n" % (self.portname,e))
-				raise e
-				self.serialport = None
-
-		self.mutex.release()
-
+			if (self.serialport == None):
+				try:
+					self.serialport = serial.Serial(self.portname,9600,timeout=2,stopbits=1,bytesize=8,rtscts=False, dsrdtr=False)
+					self.serialport.flushInput()
+				except Exception as e:
+					print ("Exception opening serial port '%s' for display: %s\n" % (self.portname,e))
+					raise e
+					self.serialport = None
 
 	def dump(self,packet,title=None):
+		if not self.DEBUG: return
 		if not packet or len(packet)==0:
 			return
 
@@ -140,6 +139,44 @@ class Visca():
 		if len(packet)==3 and qq==0x38:
 			print "Network Change - we should immedeately issue a renumbering!"
 
+	def parse_reply_packet(self, packet):
+		if not packet or len(packet) < 2:
+			return
+
+		header=ord(packet[0])
+		term=ord(packet[-1:])
+		qq=ord(packet[1])
+
+		sender = (header&0b01110000)>>4
+		broadcast = (header&0b1000)>>3
+		recipient = (header&0b0111)
+
+		if not term==0xff:
+			raise ViscaError("Packet not terminated correctly")
+
+		if len(packet)==3 and qq==0x38:
+			raise ViscaNetworkChange("Network Change - we should immedeately issue a renumbering!")
+
+		if len(packet)==4 and ((qq & 0b11110000)>>4)==6:
+			socketno = (qq & 0b00001111)
+			errcode  = ord(packet[2])
+
+			message = "Code=0x%02x, socketno=%d, raw=%s" % (errcode, socketno, packet.encode('hex'))
+
+			#these two are special, socket is zero and has no meaning:
+			if errcode==0x02 and socketno==0:
+				message = "Syntax error"
+			if errcode==0x03 and socketno==0:
+				message = "Command buffer full"
+			if errcode==0x04:
+				message = "Command canceled on socket %d" % socketno
+			if errcode==0x05:
+				message = "Invalid socket %d" % socketno
+			if errcode==0x41:
+				message = "Command not executable on socket %d" % socketno
+			raise ViscaError("Received visca error: %s" % message)
+
+		return packet
 
 	def recv_packet(self,extra_title=None):
 		# read up to 16 bytes until 0xff
@@ -161,7 +198,7 @@ class Visca():
 			self.dump(packet,"recv: %s" % extra_title)
 		else:
 			self.dump(packet,"recv")
-		return packet
+		return self.parse_reply_packet(packet)
 
 
 	def _write_packet(self,packet):
@@ -219,18 +256,11 @@ class Visca():
 
 		packet = chr(header)+data+chr(terminator)
 
-		self.mutex.acquire()
+		with self.mutex:
 
-		self._write_packet(packet)
+			self._write_packet(packet)
 
-		reply = self.recv_packet()
-
-
-		if reply[-1:] != '\xff':
-			print "received packet not terminated correctly: %s" % reply.encode('hex')
-			reply=None
-
-		self.mutex.release()
+			reply = self.recv_packet()
 
 		return reply
 

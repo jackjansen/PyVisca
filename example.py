@@ -1,24 +1,25 @@
 #! /usr/bin/env python
 # -*- coding: utf8 -*-
 #
-#    PyVisca - Implementation of the Visca serial protocol in python
-#    Copyright (C) 2013  Florian Streibelt pyvisca@f-streibelt.de
+#	 PyVisca - Implementation of the Visca serial protocol in python
+#	 Copyright (C) 2013	 Florian Streibelt pyvisca@f-streibelt.de
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, version 2 only.
+#	 This program is free software; you can redistribute it and/or modify
+#	 it under the terms of the GNU General Public License as published by
+#	 the Free Software Foundation, version 2 only.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+#	 This program is distributed in the hope that it will be useful,
+#	 but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	 GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with this program; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
-#    USA
+#	 You should have received a copy of the GNU General Public License
+#	 along with this program; if not, write to the Free Software
+#	 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA	02110-1301
+#	 USA
 
 """PyVisca by Florian Streibelt <pyvisca@f-streibelt.de>"""
+import sys
 
 #
 # This is used for testing the functionality while developing,
@@ -27,49 +28,76 @@
 
 def main():
 
-	from pyviscalib.visca import Visca
+	from pyviscalib.visca import Visca, ViscaError
 	from  time import sleep
 
-    if len(sys.argv) > 1:
-    	v = Visca(sys.argv[1])
-    else:
-        v = Visca()
-
-	v.cmd_adress_set()
-
-	v.cmd_if_clear_all()
-
+	if len(sys.argv) > 1:
+		v = Visca(sys.argv[1])
+	else:
+		v = Visca()
+	# Initializing the cameras from any state seems to be
+	# a complicated process. Try setting the address and clearing
+	# the interface a few times, sometimes one order works, sometimes
+	# the other order.
+	for i in range(3):
+		print 'example: Attempting to init camera, pass', i
+		ok = True
+		try:
+			v.cmd_adress_set()
+		except ViscaError:
+			ok = False
+		try:
+			v.cmd_if_clear_all()
+		except ViscaError:
+			ok = False
+		if ok: break
+	else:
+		print 'example: Failed to initialize cameras'
+		sys.exit(1)
+		
 	CAM=1
 
-#	v.cmd_cam_power_off(CAM)
-
+	print 'example: cmd_cam_power_on'
 	v.cmd_cam_power_on(CAM)
 
-	v.cmd_cam_auto_power_off(CAM,2)
+	if 0:
+		# This command doesn't seem to work on the EVI-HD7V
+		print 'example: cmd_cam_auto_power_off'
+		v.cmd_cam_auto_power_off(CAM,2)
 
+	print 'example: cmd_datascreen_on'
 	v.cmd_datascreen_on(CAM)
 
 
 	sleep(3)
+	print 'example: cmd_ptd_abs -1440,-360'
 	v.cmd_ptd_abs(CAM,pp=-1440,tp=-360)
 	sleep(3)
+	print 'example: cmd_cam_memory_set 0'
 	v.cmd_cam_memory_set(CAM,0)
 
 	sleep(3)
+	print 'example: cmd_ptd_abs 1440,360'
 	v.cmd_ptd_abs(CAM,pp=1440,tp=360)
 	sleep(3)
+	print 'example: cmd_cam_memory_set 1'
 	v.cmd_cam_memory_set(CAM,1)
 
 	sleep(3)
+	print 'example: cmd_ptd_abs 0,0'
 	v.cmd_ptd_abs(CAM,pp=0,tp=0)
 	sleep(3)
+	print 'example: cmd_cam_memory_set 2'
 	v.cmd_cam_memory_set(CAM,2)
 
 	sleep(5)
+	print 'example: cmd_cam_memory_recall 0'
 	v.cmd_cam_memory_recall(CAM,0)
 	sleep(3)
+	print 'example: cmd_cam_memory_recall 1'
 	v.cmd_cam_memory_recall(CAM,1)
 	sleep(3)
+	print 'example: cmd_cam_memory_recall 2'
 	v.cmd_cam_memory_recall(CAM,2)
 
 
@@ -173,12 +201,13 @@ def main():
 #	sleep(2)
 #	v.cmd_ptd_reset(CAM)
 
+	print 'example: cmd_cam_power_off'
 	v.cmd_cam_power_off(CAM)
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        pass
+	try:
+		main()
+	except KeyboardInterrupt:
+		pass
 
 
