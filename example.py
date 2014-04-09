@@ -20,6 +20,7 @@
 
 """PyVisca by Florian Streibelt <pyvisca@f-streibelt.de>"""
 import sys
+import time
 
 #
 # This is used for testing the functionality while developing,
@@ -73,47 +74,60 @@ def main():
 
 
 	print 'example: cmd_cam_power_on'
-	v.cmd_cam_power_on(CAM)
+	ack = v.cmd_cam_power_on(CAM)
+	v.wait_for_cmd_completion(ack, 10)
 
 	if 0:
 		# This command doesn't seem to work on the EVI-HD7V
 		print 'example: cmd_cam_auto_power_off'
-		v.cmd_cam_auto_power_off(CAM,2)
+		ack = v.cmd_cam_auto_power_off(CAM,2)
+		v.wait_for_cmd_completion(ack, 10)
 
 	print 'example: cmd_datascreen_on'
-	v.cmd_datascreen_on(CAM)
-
+	ack = v.cmd_datascreen_on(CAM)
+	v.wait_for_cmd_completion(ack, 10)
 	
-	sleep(3)
 	print 'example: cmd_ptd_abs -1440,-360'
-	v.cmd_ptd_abs(CAM,pp=-1440,tp=-360)
-	sleep(3)
+	ack = v.cmd_ptd_abs(CAM,pp=-1440,tp=-360)
+	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
+
 	print 'example: cmd_cam_memory_set 0'
-	v.cmd_cam_memory_set(CAM,0)
+	ack = v.cmd_cam_memory_set(CAM,0)
+	v.wait_for_cmd_completion(ack, 10)
 
-	sleep(3)
 	print 'example: cmd_ptd_abs 1440,360'
-	v.cmd_ptd_abs(CAM,pp=1440,tp=360)
-	sleep(3)
+	ack = v.cmd_ptd_abs(CAM,pp=1440,tp=360)
+	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
+
 	print 'example: cmd_cam_memory_set 1'
-	v.cmd_cam_memory_set(CAM,1)
+	ack = v.cmd_cam_memory_set(CAM,1)
+	v.wait_for_cmd_completion(ack, 10)
 
-	sleep(3)
 	print 'example: cmd_ptd_abs 0,0'
-	v.cmd_ptd_abs(CAM,pp=0,tp=0)
-	sleep(3)
-	print 'example: cmd_cam_memory_set 2'
-	v.cmd_cam_memory_set(CAM,2)
+	ack = v.cmd_ptd_abs(CAM,pp=0,tp=0)
+	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
 
-	sleep(5)
+	print 'example: cmd_cam_memory_set 2'
+	ack = v.cmd_cam_memory_set(CAM,2)
+	v.wait_for_cmd_completion(ack, 10)
+
 	print 'example: cmd_cam_memory_recall 0'
-	v.cmd_cam_memory_recall(CAM,0)
-	sleep(3)
+	ack = v.cmd_cam_memory_recall(CAM,0)
+	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
+
 	print 'example: cmd_cam_memory_recall 1'
-	v.cmd_cam_memory_recall(CAM,1)
-	sleep(3)
+	ack = v.cmd_cam_memory_recall(CAM,1)
+	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
+
 	print 'example: cmd_cam_memory_recall 2'
-	v.cmd_cam_memory_recall(CAM,2)
+	ack = v.cmd_cam_memory_recall(CAM,2)
+	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
 
 
 #	sleep(1)

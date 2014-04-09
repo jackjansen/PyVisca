@@ -21,11 +21,15 @@
 """PyVisca by Florian Streibelt <pyvisca@f-streibelt.de>"""
 
 import serial,sys
+import time
 from thread import allocate_lock
 
 class ViscaError(RuntimeError):
 	pass
 
+class ViscaNetworkChange(RuntimeError):
+	pass
+	
 class Visca():
 	DEBUG=False
 
@@ -34,6 +38,8 @@ class Visca():
 		self.mutex = allocate_lock()
 		self.portname=portname
 		self.open_port()
+		self.socket_in_use = {}
+		self.socket_completed = {}
 
 	def open_port(self):
 
@@ -157,8 +163,10 @@ class Visca():
 		if len(packet)==3 and qq==0x38:
 			raise ViscaNetworkChange("Network Change - we should immedeately issue a renumbering!")
 
-		if len(packet)==4 and ((qq & 0b11110000)>>4)==6:
-			socketno = (qq & 0b00001111)
+		socketno = qq & 0b00001111
+		messagetype = (qq & 0b11110000)>>4
+
+		if len(packet)==4 and messagetype==6:
 			errcode  = ord(packet[2])
 
 			message = "Code=0x%02x, socketno=%d, raw=%s" % (errcode, socketno, packet.encode('hex'))
@@ -174,10 +182,55 @@ class Visca():
 				message = "Invalid socket %d" % socketno
 			if errcode==0x41:
 				message = "Command not currently executable on socket %d" % socketno
-			raise ViscaError("Received unknown visca error: %s" % message)
+			raise ViscaError("Received visca error: %s" % message)
 
+		# It is a valid reply. Check whether it's an ack/completion and update
+		# the statuses
+		self.adjust_socket_status(sender, socketno, messagetype)
 		return packet
 
+	def adjust_socket_status(self, sender, socketno, messagetype):
+		if socketno == 0:
+			# Inquiry reply, probably
+			return
+		if messagetype == 4:
+			# ACK. Mark the socket as in-use (awaiting a completion).
+			if (sender, socketno) in self.socket_in_use:
+				raise ViscaError("Received ACK for in-use socket, cam=%d socket=%d" % (sender, socket))
+			self.socket_in_use[(sender, socketno)] = True
+			if (sender, socketno) in self.socket_completed:
+				print 'Warning: received ACK for cam=%d socket=%d for which we had an earlier outstanding command' % (sender, socket)
+				del socket_completed[(sender, socketno)]
+			return
+		if messagetype == 5:
+			# Completion. Mark socket as done.
+			if not (sender, socketno) in self.socket_in_use:
+				print 'Warning: received completion for cam=%d socket=%d for which we had no ACK' % (sender, socket)
+				return
+			del self.socket_in_use[(sender, socketno)]
+			self.socket_completed[(sender, socketno)] = True
+			
+	def wait_for_cmd_completion(self, packet, timeout=-1):
+		if not packet or len(packet) != 3:
+			raise ViscaError('wait_for_cmd_completion expects an ACK packet argument')
+
+		header=ord(packet[0])
+		qq=ord(packet[1])
+
+		sender = (header&0b01110000)>>4
+		socketno = qq & 0b00001111
+		messagetype = (qq & 0b11110000)>>4
+
+		if messagetype != 4:
+			raise ViscaError('wait_for_cmd_completion expects an ACK packet argument')
+
+		now = time.time()
+		while not (sender, socketno) in self.socket_completed:
+			if timeout > 0 and time.time() > now + timeout:
+				raise ViscaError("Timeout waiting for command completion")
+			self.recv_packet()
+		del self.socket_completed[(sender, socketno)]
+		
 	def recv_packet(self,extra_title=None):
 		# read up to 16 bytes until 0xff
 		packet=''
