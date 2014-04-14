@@ -90,41 +90,44 @@ def main():
 	print 'example: cmd_ptd_abs -1440,-360'
 	ack = v.cmd_ptd_abs(CAM,pp=-1440,tp=-360)
 	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
 
-	if 0:
-		print 'example: cmd_cam_memory_set 0'
-		ack = v.cmd_cam_memory_set(CAM,0)
-		v.wait_for_cmd_completion(ack, 10)
+	print 'example: cmd_cam_memory_set 0'
+	ack = v.cmd_cam_memory_set(CAM,0)
+	v.wait_for_cmd_completion(ack, 10)
 
 	print 'example: cmd_ptd_abs 1440,360'
 	ack = v.cmd_ptd_abs(CAM,pp=1440,tp=360)
 	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
 
-	if 0:
-		print 'example: cmd_cam_memory_set 1'
-		ack = v.cmd_cam_memory_set(CAM,1)
-		v.wait_for_cmd_completion(ack, 10)
+	print 'example: cmd_cam_memory_set 1'
+	ack = v.cmd_cam_memory_set(CAM,1)
+	v.wait_for_cmd_completion(ack, 10)
 
 	print 'example: cmd_ptd_abs 0,0'
 	ack = v.cmd_ptd_abs(CAM,pp=0,tp=0)
 	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
 
-	if 0:
-		print 'example: cmd_cam_memory_set 2'
-		ack = v.cmd_cam_memory_set(CAM,2)
-		v.wait_for_cmd_completion(ack, 10)
+	print 'example: cmd_cam_memory_set 2'
+	ack = v.cmd_cam_memory_set(CAM,2)
+	v.wait_for_cmd_completion(ack, 10)
 
 	print 'example: cmd_cam_memory_recall 0'
 	ack = v.cmd_cam_memory_recall(CAM,0)
 	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
 
 	print 'example: cmd_cam_memory_recall 1'
 	ack = v.cmd_cam_memory_recall(CAM,1)
 	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
 
 	print 'example: cmd_cam_memory_recall 2'
 	ack = v.cmd_cam_memory_recall(CAM,2)
 	v.wait_for_cmd_completion(ack, 10)
+	time.sleep(5)
 
 
 #	sleep(1)

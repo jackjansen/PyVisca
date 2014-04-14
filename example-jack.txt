@@ -1,7 +1,0 @@
------
-packet (sent) [0 => *] len=4: 883001ff
- QQ.........: 30
- RR.........: 01
- Data.......: None
-ERROR: Timeout waiting for reply
-received packet not terminated correctly: 

@@ -1,22 +1,22 @@
 #! /usr/bin/env python
 # -*- coding: utf8 -*-
 #
-#	 PyVisca - Implementation of the Visca serial protocol in python
-#	 Copyright (C) 2013	 Florian Streibelt pyvisca@f-streibelt.de
+#    PyVisca - Implementation of the Visca serial protocol in python
+#    Copyright (C) 2013  Florian Streibelt pyvisca@f-streibelt.de
 #
-#	 This program is free software; you can redistribute it and/or modify
-#	 it under the terms of the GNU General Public License as published by
-#	 the Free Software Foundation, version 2 only.
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, version 2 only.
 #
-#	 This program is distributed in the hope that it will be useful,
-#	 but WITHOUT ANY WARRANTY; without even the implied warranty of
-#	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#	 GNU General Public License for more details.
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
 #
-#	 You should have received a copy of the GNU General Public License
-#	 along with this program; if not, write to the Free Software
-#	 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA	02110-1301
-#	 USA
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+#    USA
 
 """PyVisca by Florian Streibelt <pyvisca@f-streibelt.de>"""
 
@@ -82,20 +82,20 @@ class Visca():
 		print " QQ.........: %02x" % qq
 
 		if qq==0x01:
-			print "				 (Command)"
+			print "              (Command)"
 		if qq==0x09:
-			print "				 (Inquiry)"
+			print "              (Inquiry)"
 
 		if len(packet)>3:
 			rr=ord(packet[2])
 			print " RR.........: %02x" % rr
 
 			if rr==0x00:
-				print "				 (Interface)"
+				print "              (Interface)"
 			if rr==0x04:
-				print "				 (Camera [1])"
+				print "              (Camera [1])"
 			if rr==0x06:
-				print "				 (Pan/Tilter)"
+				print "              (Pan/Tilter)"
 
 		if len(packet)>4:
 			data=packet[3:-1]
@@ -124,23 +124,23 @@ class Visca():
 			print " packet: ERROR!"
 
 			socketno = (qq & 0b00001111)
-			errcode	 = ord(packet[2])
+			errcode  = ord(packet[2])
 
 			#these two are special, socket is zero and has no meaning:
 			if errcode==0x02 and socketno==0:
-				print "		   : Syntax Error"
+				print "        : Syntax Error"
 			if errcode==0x03 and socketno==0:
-				print "		   : Command Buffer Full"
+				print "        : Command Buffer Full"
 
 
 			if errcode==0x04:
-				print "		   : Socket %i: Command canceled" % socketno
+				print "        : Socket %i: Command canceled" % socketno
 
 			if errcode==0x05:
-				print "		   : Socket %i: Invalid socket selected" % socketno
+				print "        : Socket %i: Invalid socket selected" % socketno
 
 			if errcode==0x41:
-				print "		   : Socket %i: Command not executable" % socketno
+				print "        : Socket %i: Command not executable" % socketno
 
 		if len(packet)==3 and qq==0x38:
 			print "Network Change - we should immedeately issue a renumbering!"
@@ -167,7 +167,7 @@ class Visca():
 		messagetype = (qq & 0b11110000)>>4
 
 		if len(packet)==4 and messagetype==6:
-			errcode	 = ord(packet[2])
+			errcode  = ord(packet[2])
 
 			message = "Code=0x%02x, socketno=%d, raw=%s" % (errcode, socketno, packet.encode('hex'))
 
@@ -242,10 +242,8 @@ class Visca():
 				count+=1
 				packet=packet+chr(byte)
 			else:
-				if count:
-					print "ERROR: Timeout waiting for complete reply"
-					break
-				return None
+				print "ERROR: Timeout waiting for reply"
+				break
 			if byte==0xff:
 				break
 
@@ -279,13 +277,13 @@ class Visca():
 
 		|------packet (3-16 bytes)---------|
 
-		 header		message		 terminator
-		 (1 byte)  (1-14 bytes)	 (1 byte)
+		 header     message      terminator
+		 (1 byte)  (1-14 bytes)  (1 byte)
 
 		| X | X . . . . .  . . . . . X | X |
 
-		header:					 terminator:
-		1 s2 s1 s0 0 r2 r1 r0	  0xff
+		header:                  terminator:
+		1 s2 s1 s0 0 r2 r1 r0     0xff
 
 		with r,s = recipient, sender msb first
 
@@ -354,9 +352,9 @@ class Visca():
 			raise ViscaError("Invalid visca integer encoding")
 		return (
 			((p & 0x0f) << 12) |
-			((q & 0x0f) <<	8) |
-			((r & 0x0f) <<	4) |
-			((s & 0x0f)		 ))
+			((q & 0x0f) <<  8) |
+			((r & 0x0f) <<  4) |
+			((s & 0x0f)      ))
 
 	def v2i_signed(self, value):
 		value = self.v2i(value)
