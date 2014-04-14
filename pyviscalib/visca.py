@@ -384,7 +384,7 @@ class Visca():
 		address = ord(reply[2])
 
 		d=address-first
-		print "debug: found %i devices on the bus" % d
+		if self.DEBUG: print "debug: found %i devices on the bus" % d
 
 		if d==0:
 			raise ViscaError("No devices on the bus")
@@ -397,7 +397,7 @@ class Visca():
 		if not reply[1:]=='\x01\x00\x01\xff':
 			raise ViscaError("ERROR clearing all interfaces on the bus!")
 
-		print "debug: all interfaces clear"
+		if self.DEBUG: print "debug: all interfaces clear"
 
 
 	def cmd_cam(self,device,subcmd):
@@ -688,7 +688,6 @@ class Visca():
 			num=5
 		if func<0 or func>2:
 			return
-		print "DEBUG: cam_memory command"
 		subcmd="\x3f"+chr(func)+chr( 0b0111 & num)
 		return self.cmd_cam(device,subcmd)
 
@@ -763,7 +762,7 @@ class Visca():
 
 	def cmd_ptd_abs(self,device,ts=0x14,ps=0x18,pp=0,tp=0):
 
-		print "DEBUG: ABS POS TO %d/%d" % (pp,tp)
+		if self.DEBUG: print "DEBUG: ABS POS TO %d/%d" % (pp,tp)
 
 		# pp: range: -1440 - 1440
 		if pp<0:
